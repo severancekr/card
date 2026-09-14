@@ -259,6 +259,10 @@ table.all tr.me td{background:var(--accent-soft);font-weight:700}
 }
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .hidden{display:none !important}
+
+/* 회의비는 글씨만 빨간색으로 표시합니다 */
+.meeting-text{color:var(--accent);font-weight:700}
+select.meeting{color:var(--accent);font-weight:700;border-color:var(--accent)}
 .spinner{
   width:17px;height:17px;border:2px solid rgba(124,133,152,.3);border-top-color:var(--accent);
   border-radius:50%;display:inline-block;animation:spin .7s linear infinite;flex:0 0 auto;
@@ -421,14 +425,14 @@ footer.note{text-align:center;font-size:11px;color:var(--faint);padding:4px 0 0}
       </div>
 
       <div class="field">
-        <label for="note">비고</label>
-        <select id="note">
+        <label for="detail">사용목적(세부)</label>
+        <select id="detail">
           <option>면담후식사</option>
           <option selected>면담후음료</option>
           <option>행사진행음료</option>
           <option value="__custom__">직접 입력</option>
         </select>
-        <input type="text" id="noteCustom" class="hidden" placeholder="비고를 입력하세요" style="margin-top:8px">
+        <input type="text" id="detailCustom" class="hidden" placeholder="세부 목적을 입력하세요" style="margin-top:8px">
       </div>
 
       <div class="field">
@@ -436,8 +440,14 @@ footer.note{text-align:center;font-size:11px;color:var(--faint);padding:4px 0 0}
         <select id="chargeTo">
           <option value="">본인 예산</option>
           <option value="공용비">공용비</option>
+          <option value="회의비">회의비</option>
         </select>
         <div class="hint" id="chargeHint">본인 예산에서 차감됩니다.</div>
+      </div>
+
+      <div class="field">
+        <label for="remark">비고</label>
+        <input type="text" id="remark" placeholder="선택 입력">
       </div>
     </div>
   </form>
@@ -529,6 +539,10 @@ footer.note{text-align:center;font-size:11px;color:var(--faint);padding:4px 0 0}
       <table class="bt" id="bTable"></table>
       <div class="bar" id="bBar"><span style="width:0%"></span></div>
       <div class="barnote" id="bNote"></div>
+    </div>
+    <div class="card hidden" id="extraBox">
+      <p class="card-title">관리자 전용 예산</p>
+      <div id="extraBody"></div>
     </div>
     <div class="card hidden" id="allBox">
       <p class="card-title">전체 예산 (관리자)</p>
@@ -671,16 +685,25 @@ $('doneToList').addEventListener('click', ()=>openList());
 $('goBudget').addEventListener('click', ()=>openBudget());
 $('budgetBack').addEventListener('click', ()=>show('step4'));
 
-/* 손경훈은 백만호 예산에서 차감됩니다 */
+/* 예산 차감 안내 : 손경훈은 백만호 예산, 회의비는 개인 예산과 무관 */
 function updateChargeHint(){
-  const common = $('chargeTo').value === '공용비';
-  let owner = state.writer;
-  if(state.writer === '손경훈') owner = '백만호';
-  $('chargeHint').textContent = common
-    ? '공용비 예산에서 차감됩니다.'
-    : (owner && owner !== state.writer)
-      ? owner + ' 예산에서 차감됩니다.'
-      : '본인 예산에서 차감됩니다.';
+  const v = $('chargeTo').value;
+  const sel = $('chargeTo');
+  sel.classList.toggle('meeting', v === '회의비');
+
+  if(v === '회의비'){
+    $('chargeHint').innerHTML =
+      '<b class="meeting-text">회의비</b>로 처리됩니다. 본인 예산에서는 차감되지 않으며 관리자만 조회할 수 있습니다.';
+    return;
+  }
+  if(v === '공용비'){
+    $('chargeHint').textContent = '공용비 예산에서 차감됩니다.';
+    return;
+  }
+  const owner = (state.writer === '손경훈') ? '백만호' : state.writer;
+  $('chargeHint').textContent = (owner && owner !== state.writer)
+    ? owner + ' 예산에서 차감됩니다.'
+    : '본인 예산에서 차감됩니다.';
 }
 $('chargeTo').addEventListener('change', updateChargeHint);
 
@@ -751,7 +774,11 @@ function bindCustom(selId, inpId){
 }
 bindCustom('vendorType','vendorTypeCustom');
 bindCustom('purpose','purposeCustom');
-bindCustom('note','noteCustom');
+bindCustom('detail','detailCustom');
+
+function hasOption(selId, value){
+  return Array.prototype.some.call($(selId).options, o => o.value === value || o.text === value);
+}
 
 function resolve(selId, inpId, label, optional){
   const sel = $(selId).value;
@@ -828,6 +855,10 @@ $('photoInput').addEventListener('change', async e=>{
     const filled = [];
     if(g.amount && !$('amount').value){ setAmount(g.amount); filled.push('금액'); }
     if(g.vendor && !$('vendor').value){ $('vendor').value = g.vendor; filled.push('상호'); }
+    if(g.vendorType && !$('vendorType').value && hasOption('vendorType', g.vendorType)){
+      $('vendorType').value = g.vendorType;
+      filled.push('사용처 구분');
+    }
     if(g.date && !state.touchedDate){ setDate(g.date); state.touchedDate = true; filled.push('날짜'); }
     if(g.time && !state.touchedTime){ $('timeStart').value = g.time; state.touchedTime = true; filled.push('시간'); }
 
@@ -870,7 +901,7 @@ async function save(){
   const pp = resolve('purpose','purposeCustom','사용목적', false);
   if(!pp.ok) return toast(pp.msg);
   if(!att)                    { toast('참석자를 입력하세요'); $('attendees').focus(); return; }
-  const nt = resolve('note','noteCustom','비고', true);
+  const dt = resolve('detail','detailCustom','사용목적(세부)', true);
 
   const payload = {
     division  : state.div,
@@ -884,7 +915,8 @@ async function save(){
     vendorType: vt.value,
     purpose   : pp.value,
     attendees : att,
-    note      : nt.value,
+    detail    : dt.value,
+    remark    : $('remark').value.trim(),
     writer    : state.writer,
     chargeTo  : $('chargeTo').value,
     receiptId : state.receipt ? state.receipt.fileId : '',
@@ -906,32 +938,38 @@ async function save(){
 }
 
 function showDone(p, out){
+  const owner = out.owner || p.writer;
+  const ownerCell = (owner === '회의비')
+    ? '<span class="meeting-text">회의비</span>'
+    : escapeHtml(owner);
+
   const rows = [
-    ['구분',   p.division],
-    ['일시',   p.dateLabel + ' (' + p.weekday + ') ' + p.timeStart + ' ~ ' + (p.timeEnd || '')],
-    ['금액',   won(p.amount) + '원'],
-    ['사용처', p.vendor + ' / ' + p.vendorType],
-    ['목적',   p.purpose],
-    ['참석자', p.attendees],
-    ['비고',   p.note || '-'],
-    ['예산',   out.owner || p.writer],
-    ['영수증', p.receiptUrl ? '첨부됨' : '없음']
+    ['구분',          escapeHtml(p.division)],
+    ['일시',          escapeHtml(p.dateLabel + ' (' + p.weekday + ') ' + p.timeStart + ' ~ ' + (p.timeEnd || ''))],
+    ['금액',          escapeHtml(won(p.amount) + '원')],
+    ['사용처',        escapeHtml(p.vendor + ' / ' + p.vendorType)],
+    ['사용목적',      escapeHtml(p.purpose)],
+    ['사용목적(세부)', escapeHtml(p.detail || '-')],
+    ['참석자',        escapeHtml(p.attendees)],
+    ['비고',          escapeHtml(p.remark || '-')],
+    ['예산',          ownerCell],
+    ['영수증',        p.receiptUrl ? '첨부됨' : '없음']
   ];
-  if(out.budget){
-    rows.push(['이번달 잔액', won(out.budget.left) + '원']);
-  }
+  if(out.budget) rows.push(['이번달 잔액', escapeHtml(won(out.budget.left) + '원')]);
+  else if(owner === '회의비') rows.push(['이번달 잔액', '개인 예산 차감 없음']);
+
   $('summary').innerHTML = rows
-    .map(r => '<div><span>' + r[0] + '</span><span>' + escapeHtml(r[1]) + '</span></div>').join('');
+    .map(r => '<div><span>' + r[0] + '</span><span>' + r[1] + '</span></div>').join('');
   show('step3');
 }
 
 $('again').addEventListener('click', ()=>{
-  ['amount','vendor','attendees','vendorTypeCustom','purposeCustom','noteCustom','timeEnd']
+  ['amount','vendor','attendees','remark','vendorTypeCustom','purposeCustom','detailCustom','timeEnd']
     .forEach(id => $(id).value = '');
   $('vendorType').value = ''; $('purpose').value = '';
-  $('note').value = '면담후음료';
+  $('detail').value = '면담후음료';
   $('chargeTo').value = '';
-  ['vendorTypeCustom','purposeCustom','noteCustom'].forEach(id => $(id).classList.add('hidden'));
+  ['vendorTypeCustom','purposeCustom','detailCustom'].forEach(id => $(id).classList.add('hidden'));
   updateChargeHint();
   clearPhoto();
   applyNow(true);
@@ -999,14 +1037,17 @@ function renderList(rows){
   html += rows.map(r=>{
     const receipt = r.receiptUrl
       ? '<a href="' + escapeHtml(r.receiptUrl) + '" target="_blank" rel="noopener">영수증 보기</a>' : '';
-    const charge = (r.owner && r.owner !== state.writer)
-      ? ' · ' + escapeHtml(r.owner) + ' 예산' : '';
+    let charge = '';
+    if(r.owner === '회의비')            charge = ' · <span class="meeting-text">회의비</span>';
+    else if(r.owner && r.owner !== state.writer) charge = ' · ' + escapeHtml(r.owner) + ' 예산';
+    const extra = [r.detail, r.remark].filter(Boolean).map(escapeHtml).join(' · ');
     return '<div class="rowitem">'
       + '<div class="top"><span class="vend">' + escapeHtml(r.vendor) + '</span>'
       + '<span class="amt">' + won(r.amount) + '원</span></div>'
       + '<div class="meta">' + escapeHtml(r.division) + ' · ' + escapeHtml(r.dateLabel)
       + ' (' + escapeHtml(r.weekday) + ') ' + escapeHtml(r.timeStart)
-      + ' · ' + escapeHtml(r.purpose) + ' · ' + escapeHtml(r.attendees) + charge + '</div>'
+      + ' · ' + escapeHtml(r.purpose) + ' · ' + escapeHtml(r.attendees) + charge
+      + (extra ? '<br>' + extra : '') + '</div>'
       + '<div class="acts">' + receipt
       + '<button class="danger" data-del="' + escapeHtml(r.id) + '">삭제</button></div>'
       + '</div>';
@@ -1149,13 +1190,32 @@ function renderBudget(out){
       : '총 한도의 ' + rate + '% 사용';
   }
 
+  // 백만호 본인에게만 보이는 공용비 · 회의비
+  const ex = $('extraBox');
+  if(out.extra && out.extra.length){
+    ex.classList.remove('hidden');
+    $('extraBody').innerHTML = out.extra.map(b => {
+      const title = (b.name === '회의비')
+        ? '<span class="meeting-text">회의비</span>' : escapeHtml(b.name);
+      return '<div style="margin-bottom:14px">'
+        + '<div style="font-weight:700;margin-bottom:6px">' + title + '</div>'
+        + '<table class="bt">'
+        + '<tr><td>총 한도</td><td>' + won(b.total) + '원</td></tr>'
+        + '<tr><td>사용 금액</td><td>' + won(b.used) + '원</td></tr>'
+        + '<tr class="hl"><td>잔액</td><td>' + won(b.left) + '원</td></tr>'
+        + '</table></div>';
+    }).join('');
+  }else{
+    ex.classList.add('hidden');
+  }
+
   const box = $('allBox');
   if(out.master && out.all && out.all.length){
     box.classList.remove('hidden');
     const head = '<tr><th>이름</th><th>한도</th><th>이월</th><th>총한도</th><th>사용</th><th>잔액</th></tr>';
     const body = out.all.map(r =>
       '<tr' + (r.name === out.owner ? ' class="me"' : '') + '>'
-      + '<td>' + escapeHtml(r.name) + '</td>'
+      + '<td>' + (r.name === '회의비' ? '<span class="meeting-text">회의비</span>' : escapeHtml(r.name)) + '</td>'
       + '<td>' + won(r.limit) + '</td>'
       + '<td>' + won(r.carry) + '</td>'
       + '<td>' + won(r.total) + '</td>'
