@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="법인카드">
+<title>법인카드 사용내역 입력</title>
+<link rel="icon" href="https://www.s-tec.co.kr/images/logo.jpg">
+<style>
+:root{
+  --bg:#f4f5f7;
+  --card:#ffffff;
+  --line:#e6e8ec;
+  --line-strong:#d2d6dd;
+  --text:#141922;
+  --muted:#7c8598;
+  --faint:#b3bac6;
+  --accent:#d81f45;
+  --accent-soft:#fdeef1;
+  --ok:#0f9d58;
+  --radius:16px;
+  --shadow:0 1px 2px rgba(16,24,40,.05),0 8px 24px rgba(16,24,40,.06);
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#0d1117;--card:#161b22;--line:#242c37;--line-strong:#323c4a;
+    --text:#e8ecf2;--muted:#8b95a5;--faint:#5d6775;
+    --accent:#ff4d6d;--accent-soft:#2a1620;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35);
+  }
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg);color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR","Malgun Gothic",system-ui,sans-serif;
+  font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased;
+  padding-bottom:calc(96px + env(safe-area-inset-bottom));
+}
+.wrap{max-width:520px;margin:0 auto;padding:0 16px}
+
+/* ---------- 헤더 / 로고 ---------- */
+header{padding:calc(22px + env(safe-area-inset-top)) 16px 16px;text-align:center}
+.logo{
+  width:82px;height:82px;margin:0 auto 13px;border-radius:50%;overflow:hidden;
+  background:#fff;box-shadow:0 0 0 1px var(--line),0 10px 24px rgba(16,24,40,.12);
+  display:flex;align-items:center;justify-content:center;
+}
+.logo img{width:100%;height:100%;object-fit:cover;display:block}
+h1{font-size:20px;font-weight:700;letter-spacing:-.3px;margin:0}
+.sub{font-size:13px;color:var(--muted);margin-top:4px}
+
+/* ---------- 카드 ---------- */
+.card{
+  background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+  box-shadow:var(--shadow);padding:18px 16px;margin-bottom:14px;
+}
+.card-title{font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.6px;margin:0 0 12px}
+.card-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.card-head .card-title{margin:0}
+.now-btn{
+  border:1px solid var(--line-strong);background:var(--card);color:var(--muted);
+  font-family:inherit;font-size:12px;font-weight:700;
+  padding:6px 11px;border-radius:999px;cursor:pointer;white-space:nowrap;
+}
+.now-btn:active{background:var(--bg)}
+
+/* ---------- 구분 선택 버튼 ---------- */
+.divisions{display:flex;flex-direction:column;gap:10px}
+.div-btn{
+  width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:20px 18px;border:1px solid var(--line-strong);border-radius:14px;
+  background:var(--card);color:var(--text);
+  font-family:inherit;font-size:17px;font-weight:600;letter-spacing:-.2px;cursor:pointer;
+  transition:transform .12s ease,border-color .12s ease,background .12s ease;
+}
+.div-btn:active{transform:scale(.985)}
+.div-btn .arrow{color:var(--faint);font-size:18px}
+
+/* ---------- 입력 필드 ---------- */
+.field{margin-bottom:16px}
+.field:last-child{margin-bottom:0}
+label{display:block;font-size:13px;font-weight:600;color:var(--muted);margin-bottom:7px}
+label .req{color:var(--accent);margin-left:2px}
+input,select,textarea{
+  width:100%;font-family:inherit;font-size:16px;color:var(--text);background:var(--card);
+  border:1px solid var(--line-strong);border-radius:12px;padding:13px 14px;outline:none;
+  appearance:none;-webkit-appearance:none;
+  transition:border-color .12s ease,box-shadow .12s ease;
+}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+input::placeholder,textarea::placeholder{color:var(--faint)}
+select{
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9'><path d='M1 1l6 6 6-6' fill='none' stroke='%237c8598' stroke-width='2' stroke-linecap='round'/></svg>");
+  background-repeat:no-repeat;background-position:right 14px center;padding-right:38px;
+}
+textarea{resize:none;min-height:70px}
+.hint{font-size:12px;color:var(--muted);margin-top:6px}
+
+/* ---------- 요일 칩 ---------- */
+.days{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.day{
+  padding:11px 0;text-align:center;font-size:15px;font-weight:600;
+  border:1px solid var(--line-strong);border-radius:10px;
+  background:var(--card);color:var(--text);cursor:pointer;
+}
+.day.on{border-color:var(--accent);background:var(--accent);color:#fff}
+.day.sun{color:#e5484d}
+.day.sat{color:#3b82f6}
+.day.on.sun,.day.on.sat{color:#fff}
+
+/* ---------- 시간 행 ---------- */
+.timerow{display:grid;grid-template-columns:1fr 34px 1fr;gap:8px;align-items:center}
+.tilde{text-align:center;font-size:19px;font-weight:600;color:var(--muted);line-height:46px;user-select:none}
+
+/* ---------- 금액 ---------- */
+.amount-wrap{position:relative}
+#amount{
+  font-size:24px;font-weight:700;color:var(--accent);text-align:right;
+  padding-right:44px;letter-spacing:-.4px;font-variant-numeric:tabular-nums;
+}
+.won{position:absolute;right:15px;top:50%;transform:translateY(-50%);font-size:16px;font-weight:600;color:var(--muted);pointer-events:none}
+
+/* ---------- 영수증 ---------- */
+.photo-btn{
+  width:100%;padding:15px;border:1px dashed var(--line-strong);border-radius:12px;
+  background:var(--card);color:var(--muted);font-family:inherit;font-size:15px;font-weight:600;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.photo-btn:active{background:var(--bg)}
+.thumb{position:relative;border-radius:12px;overflow:hidden;border:1px solid var(--line)}
+.thumb img{width:100%;display:block;max-height:260px;object-fit:cover}
+.thumb .del{
+  position:absolute;top:8px;right:8px;width:32px;height:32px;border-radius:50%;
+  background:rgba(0,0,0,.6);color:#fff;border:none;font-size:17px;line-height:1;cursor:pointer;
+}
+.ocr-state{
+  display:flex;align-items:center;gap:8px;margin-top:10px;
+  font-size:13px;font-weight:600;color:var(--muted);
+}
+
+/* ---------- 상단 배지 ---------- */
+.crumb{
+  display:flex;align-items:center;gap:10px;margin-bottom:14px;padding:11px 14px;
+  background:var(--accent-soft);border:1px solid var(--accent);border-radius:12px;
+}
+.crumb .who{flex:1;min-width:0}
+.crumb b{color:var(--accent);font-size:15px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.crumb small{font-size:11px;color:var(--muted);display:block;font-weight:600}
+.link-btn{
+  background:none;border:none;color:var(--accent);font-family:inherit;
+  font-size:13px;font-weight:700;cursor:pointer;padding:6px 4px;white-space:nowrap;
+}
+
+/* ---------- 하단 바 ---------- */
+.bottom{
+  position:fixed;left:0;right:0;bottom:0;
+  padding:12px 16px calc(12px + env(safe-area-inset-bottom));
+  background:color-mix(in srgb,var(--bg) 88%,transparent);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border-top:1px solid var(--line);z-index:40;
+}
+.bottom .wrap{padding:0}
+.submit{
+  width:100%;padding:16px;border:none;border-radius:14px;background:var(--accent);color:#fff;
+  font-family:inherit;font-size:17px;font-weight:700;letter-spacing:-.2px;cursor:pointer;
+  transition:transform .12s ease,opacity .12s ease;
+}
+.submit:active{transform:scale(.99)}
+.submit:disabled{opacity:.55;cursor:not-allowed}
+.submit.ghost{background:var(--card);color:var(--text);border:1px solid var(--line-strong)}
+
+/* ---------- 완료 ---------- */
+.done{text-align:center;padding:36px 8px}
+.check{
+  width:72px;height:72px;margin:0 auto 18px;border-radius:50%;background:var(--ok);
+  display:flex;align-items:center;justify-content:center;animation:pop .4s cubic-bezier(.2,.9,.3,1.4);
+}
+@keyframes pop{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
+.check svg{width:34px;height:34px}
+.done h2{font-size:19px;margin:0 0 6px}
+.done p{color:var(--muted);font-size:14px;margin:0 0 22px}
+.summary{
+  text-align:left;background:var(--card);border:1px solid var(--line);
+  border-radius:12px;padding:14px 16px;margin-bottom:18px;font-size:14px;
+}
+.summary div{display:flex;justify-content:space-between;gap:14px;padding:6px 0}
+.summary span:first-child{color:var(--muted);flex:0 0 auto}
+.summary span:last-child{text-align:right;font-weight:600;word-break:break-all}
+
+/* ---------- 내역 목록 ---------- */
+.rowitem{
+  background:var(--card);border:1px solid var(--line);border-radius:14px;
+  padding:14px 15px;margin-bottom:10px;box-shadow:var(--shadow);
+}
+.rowitem .top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.rowitem .vend{font-size:16px;font-weight:700;letter-spacing:-.2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rowitem .amt{font-size:16px;font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums;white-space:nowrap}
+.rowitem .meta{font-size:12.5px;color:var(--muted);margin-top:5px}
+.rowitem .acts{display:flex;gap:14px;margin-top:9px;padding-top:9px;border-top:1px solid var(--line)}
+.rowitem .acts a,.rowitem .acts button{
+  font-family:inherit;font-size:12.5px;font-weight:700;background:none;border:none;padding:0;
+  color:var(--muted);text-decoration:none;cursor:pointer;
+}
+.rowitem .acts .danger{color:var(--accent)}
+.total{
+  display:flex;justify-content:space-between;align-items:center;
+  background:var(--card);border:1px solid var(--line);border-radius:14px;
+  padding:14px 16px;margin-bottom:12px;font-weight:700;box-shadow:var(--shadow);
+}
+.total .sum{color:var(--accent);font-size:18px;font-variant-numeric:tabular-nums}
+.empty{text-align:center;color:var(--muted);font-size:14px;padding:44px 0}
+.monthbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.monthbar button{
+  width:40px;height:40px;border-radius:12px;border:1px solid var(--line-strong);
+  background:var(--card);color:var(--text);font-size:17px;font-family:inherit;cursor:pointer;
+}
+.monthbar span{font-weight:700;font-size:16px}
+
+/* ---------- 공통 ---------- */
+.toast{
+  position:fixed;left:50%;bottom:calc(104px + env(safe-area-inset-bottom));
+  transform:translateX(-50%) translateY(14px);background:#141922;color:#fff;
+  padding:12px 18px;border-radius:999px;font-size:14px;font-weight:600;
+  opacity:0;pointer-events:none;transition:all .25s ease;z-index:60;max-width:88vw;text-align:center;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.hidden{display:none !important}
+.spinner{
+  width:17px;height:17px;border:2px solid rgba(124,133,152,.3);border-top-color:var(--accent);
+  border-radius:50%;display:inline-block;animation:spin .7s linear infinite;flex:0 0 auto;
+}
+.submit .spinner{border-color:rgba(255,255,255,.35);border-top-color:#fff;vertical-align:-3px;margin-right:8px}
+@keyframes spin{to{transform:rotate(360deg)}}
+footer{text-align:center;font-size:11px;color:var(--faint);padding:4px 0 18px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo"><img src="https://www.s-tec.co.kr/images/logo.jpg" alt="로고"></div>
+  <h1>법인카드 사용내역 입력</h1>
+  <div class="sub">사용 후 바로 입력해 주세요</div>
+</header>
+
+<!-- ===== STEP 1 : 이름 + 구분 선택 ===== -->
+<section id="step1" class="wrap">
+  <div class="card">
+    <div class="field">
+      <label for="writer">작성자<span class="req">*</span></label>
+      <input type="text" id="writer" placeholder="이름을 입력하세요" autocomplete="name">
+      <div class="hint">한 번 입력하면 이 기기에 저장되어 다음부터 자동으로 채워집니다.</div>
+    </div>
+  </div>
+  <div class="card">
+    <p class="card-title">구분을 선택하세요</p>
+    <div class="divisions">
+      <button class="div-btn" data-div="본관">본관<span class="arrow">›</span></button>
+      <button class="div-btn" data-div="암병원">암병원<span class="arrow">›</span></button>
+      <button class="div-btn" data-div="전문센터">전문센터<span class="arrow">›</span></button>
+    </div>
+  </div>
+  <footer>입력한 내용은 구글 스프레드시트에 자동 저장됩니다.</footer>
+</section>
+
+<!-- ===== STEP 2 : 입력 폼 ===== -->
+<section id="step2" class="wrap hidden">
+  <div class="crumb">
+    <div class="who">
+      <small id="writerLabel">작성자</small>
+      <b id="divLabel">본관</b>
+    </div>
+    <button class="link-btn" id="goList">내 내역</button>
+    <button class="link-btn" id="changeDiv">변경</button>
+  </div>
+
+  <!-- 영수증 -->
+  <div class="card">
+    <p class="card-title">영수증 사진 (선택)</p>
+    <input type="file" id="photoInput" accept="image/*" class="hidden">
+    <button type="button" class="photo-btn" id="photoBtn">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+      영수증 촬영 · 사진 선택
+    </button>
+    <div id="thumbBox" class="thumb hidden"><img id="thumbImg" alt="영수증"><button type="button" class="del" id="photoDel">×</button></div>
+    <div id="ocrState" class="ocr-state hidden"></div>
+    <div class="hint">첨부하지 않아도 저장됩니다. 첨부하면 금액·시간·상호를 자동으로 읽어 채워 드립니다.</div>
+  </div>
+
+  <form id="form" autocomplete="off">
+    <!-- 사용일시 -->
+    <div class="card">
+      <div class="card-head">
+        <p class="card-title">사용일시</p>
+        <button type="button" class="now-btn" id="nowBtn">지금 시각으로</button>
+      </div>
+
+      <div class="field">
+        <label for="date">날짜<span class="req">*</span></label>
+        <input type="date" id="date" required>
+        <div class="hint">시트 표시 : <b id="datePreview">-</b></div>
+      </div>
+
+      <div class="field">
+        <label>요일<span class="req">*</span></label>
+        <div class="days" id="days">
+          <div class="day sun" data-day="일">일</div>
+          <div class="day" data-day="월">월</div>
+          <div class="day" data-day="화">화</div>
+          <div class="day" data-day="수">수</div>
+          <div class="day" data-day="목">목</div>
+          <div class="day" data-day="금">금</div>
+          <div class="day sat" data-day="토">토</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="timeStart">시간<span class="req">*</span></label>
+        <div class="timerow">
+          <input type="time" id="timeStart" required>
+          <div class="tilde">~</div>
+          <input type="time" id="timeEnd" aria-label="종료시간(선택)">
+        </div>
+        <div class="hint">앱을 연 현재 시각이 들어갑니다. 눌러서 바꿀 수 있고, 종료시간은 비워두셔도 됩니다.</div>
+      </div>
+    </div>
+
+    <!-- 사용내역 -->
+    <div class="card">
+      <p class="card-title">사용내역</p>
+
+      <div class="field">
+        <label for="amount">사용금액<span class="req">*</span></label>
+        <div class="amount-wrap">
+          <input type="text" id="amount" inputmode="numeric" placeholder="0" required>
+          <span class="won">원</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="vendor">사용처 (상호)<span class="req">*</span></label>
+        <input type="text" id="vendor" placeholder="예) 신촌김치삼겹살" required>
+      </div>
+
+      <div class="field">
+        <label for="vendorType">사용처 구분<span class="req">*</span></label>
+        <select id="vendorType" required>
+          <option value="">선택하세요</option>
+          <option>음식점</option>
+          <option>카페</option>
+          <option>온라인</option>
+          <option>마트·편의점</option>
+          <option>주유소</option>
+          <option>기타</option>
+          <option value="__custom__">직접 입력</option>
+        </select>
+        <input type="text" id="vendorTypeCustom" class="hidden" placeholder="사용처 구분을 입력하세요" style="margin-top:8px">
+      </div>
+
+      <div class="field">
+        <label for="purpose">사용목적<span class="req">*</span></label>
+        <select id="purpose" required>
+          <option value="">선택하세요</option>
+          <option>회의식</option>
+          <option>면담식사</option>
+          <option>면담음료</option>
+          <option>부서회의</option>
+          <option value="__custom__">직접 입력</option>
+        </select>
+        <input type="text" id="purposeCustom" class="hidden" placeholder="사용목적을 입력하세요" style="margin-top:8px">
+      </div>
+
+      <div class="field">
+        <label for="attendees">참석자<span class="req">*</span></label>
+        <input type="text" id="attendees" placeholder="예) 백００ 외 5명" required>
+      </div>
+
+      <div class="field">
+        <label for="note">비고</label>
+        <textarea id="note" placeholder="선택 입력"></textarea>
+      </div>
+    </div>
+  </form>
+  <footer>저장 버튼을 누르면 구글시트에 기록됩니다.</footer>
+</section>
+
+<!-- ===== STEP 3 : 완료 ===== -->
+<section id="step3" class="wrap hidden">
+  <div class="done">
+    <div class="check">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M4 12.5l5.2 5.2L20 7" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <h2>저장되었습니다</h2>
+    <p>구글 스프레드시트에 기록되었습니다.</p>
+    <div class="summary" id="summary"></div>
+    <button class="submit" id="again">계속 입력하기</button>
+    <button class="submit ghost" id="doneToList" style="margin-top:10px">내 입력내역 보기</button>
+  </div>
+</section>
+
+<!-- ===== STEP 4 : 내 입력내역 ===== -->
+<section id="step4" class="wrap hidden">
+  <div class="crumb">
+    <div class="who">
+      <small>내 입력내역</small>
+      <b id="listWriter">-</b>
+    </div>
+    <button class="link-btn" id="backToForm">입력하기</button>
+  </div>
+  <div class="monthbar">
+    <button id="prevMonth" aria-label="이전 달">‹</button>
+    <span id="monthLabel">-</span>
+    <button id="nextMonth" aria-label="다음 달">›</button>
+  </div>
+  <div id="listBody"></div>
+</section>
+
+<!-- 하단 고정 버튼 -->
+<div class="bottom hidden" id="bottomBar">
+  <div class="wrap"><button class="submit" id="submitBtn">저장하기</button></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* =========================================================
+   ①  설정  :  아래 두 줄만 본인 값으로 바꾸면 됩니다
+   ========================================================= */
+const CONFIG = {
+  // Apps Script 웹앱 배포 URL (…/exec 로 끝나야 합니다)
+  GAS_URL: 'https://script.google.com/macros/s/AKfycbyPcMAWTAFrljP2DHg47OBACJtVw-GBUnmny3ZYuIlNtQp9r_QlCGjJ6J3G2dydxbhZVw/exec',
+  // Code.gs 의 TOKEN 값과 반드시 동일하게
+  TOKEN: 'stec-2026-card'
+};
+/* ========================================================= */
+
+const $ = id => document.getElementById(id);
+const WEEK = ['일','월','화','수','목','금','토'];
+const pad = n => String(n).padStart(2,'0');
+const state = {
+  div:'', day:'', writer:'', receipt:null, listMonth:'',
+  touchedDate:false,   // 사용자가 날짜·요일을 직접 고쳤는지
+  touchedTime:false,   // 사용자가 시간을 직접 고쳤는지
+  hiddenAt:0           // 앱이 화면에서 사라진 시각
+};
+
+/* ---------- 서버 통신 ---------- */
+async function call(action, data){
+  if(CONFIG.GAS_URL.indexOf('script.google.com') === -1){
+    throw new Error('설정 오류: GAS_URL 을 입력해 주세요');
+  }
+  let res;
+  try{
+    res = await fetch(CONFIG.GAS_URL, {
+      method:'POST',
+      // text/plain 이어야 CORS 사전요청 없이 전송됩니다
+      headers:{ 'Content-Type':'text/plain;charset=utf-8' },
+      body: JSON.stringify(Object.assign({ token:CONFIG.TOKEN, action:action }, data)),
+      redirect:'follow'
+    });
+  }catch(err){
+    throw new Error('서버에 연결하지 못했습니다. 인터넷 상태와 배포 주소를 확인해 주세요.');
+  }
+
+  // 배포 권한이 "모든 사용자"가 아니면 JSON 대신 로그인 안내 화면이 돌아옵니다
+  const text = await res.text();
+  let out;
+  try{
+    out = JSON.parse(text);
+  }catch(err){
+    if(text.indexOf('accounts.google.com') !== -1 || text.indexOf('Google 계정') !== -1){
+      throw new Error('배포 권한을 "모든 사용자"로 바꾼 뒤 새 버전으로 다시 배포해 주세요.');
+    }
+    throw new Error('서버 응답을 읽지 못했습니다. 스크립트를 새 버전으로 배포했는지 확인해 주세요.');
+  }
+  if(!out.ok) throw new Error(out.error || '처리 실패');
+  return out;
+}
+
+/* ---------- 토스트 ---------- */
+let toastTimer;
+function toast(msg){
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 2800);
+}
+
+/* ---------- 화면 전환 ---------- */
+function show(step){
+  ['step1','step2','step3','step4'].forEach(s => $(s).classList.toggle('hidden', s !== step));
+  $('bottomBar').classList.toggle('hidden', step !== 'step2');
+  window.scrollTo(0,0);
+}
+
+/* ---------- STEP 1 : 이름 + 구분 ---------- */
+$('writer').addEventListener('input', e=>{
+  state.writer = e.target.value.trim();
+  try{ localStorage.setItem('stec_writer', state.writer); }catch(err){}
+});
+document.querySelectorAll('.div-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const name = $('writer').value.trim();
+    if(!name){ toast('작성자 이름을 먼저 입력하세요'); $('writer').focus(); return; }
+    state.writer = name;
+    state.div = btn.dataset.div;
+    try{
+      localStorage.setItem('stec_writer', name);
+      localStorage.setItem('stec_div', state.div);
+    }catch(err){}
+    $('divLabel').textContent = state.div;
+    $('writerLabel').textContent = '작성자 ' + state.writer;
+    applyNow(false);          // 폼을 여는 지금 시각으로 맞춥니다
+    show('step2');
+  });
+});
+$('changeDiv').addEventListener('click', ()=>show('step1'));
+$('backToForm').addEventListener('click', ()=>show('step2'));
+$('goList').addEventListener('click', ()=>openList());
+$('doneToList').addEventListener('click', ()=>openList());
+
+/* ---------- 날짜 · 요일 ---------- */
+function fmtDate(v){                       // 2026-09-04 -> 9/4
+  if(!v) return '';
+  const p = v.split('-').map(Number);
+  return p[1] + '/' + p[2];
+}
+function pickDay(name){
+  state.day = name;
+  document.querySelectorAll('.day').forEach(el=>el.classList.toggle('on', el.dataset.day===name));
+}
+function setDate(iso){
+  $('date').value = iso;
+  $('datePreview').textContent = fmtDate(iso) || '-';
+  const p = iso.split('-').map(Number);
+  pickDay(WEEK[new Date(p[0], p[1]-1, p[2]).getDay()]);
+}
+$('date').addEventListener('change', ()=>{
+  if(!$('date').value) return;
+  state.touchedDate = true;
+  setDate($('date').value);
+});
+document.querySelectorAll('.day').forEach(el=>{
+  el.addEventListener('click', ()=>{ state.touchedDate = true; pickDay(el.dataset.day); });
+});
+$('timeStart').addEventListener('input', ()=>{ state.touchedTime = true; });
+$('timeEnd').addEventListener('input', ()=>{ state.touchedTime = true; });
+
+/* ---------- 현재 시각으로 맞추기 ---------- */
+function applyNow(force){
+  const now = new Date();
+  if(force || !state.touchedDate){
+    setDate(now.getFullYear() + '-' + pad(now.getMonth()+1) + '-' + pad(now.getDate()));
+  }
+  if(force || !state.touchedTime){
+    $('timeStart').value = pad(now.getHours()) + ':' + pad(now.getMinutes());
+  }
+  if(force){ state.touchedDate = false; state.touchedTime = false; $('timeEnd').value = ''; }
+}
+$('nowBtn').addEventListener('click', ()=>{
+  applyNow(true);
+  toast('현재 날짜와 시각으로 맞췄습니다');
+});
+
+// 앱을 다른 화면에 두었다가 3분 넘게 지나 돌아오면 시각을 다시 맞춥니다.
+// 직접 고친 값은 그대로 둡니다.
+document.addEventListener('visibilitychange', ()=>{
+  if(document.hidden){ state.hiddenAt = Date.now(); return; }
+  const away = Date.now() - state.hiddenAt;
+  if(state.hiddenAt && away > 180000 && !$('step2').classList.contains('hidden')) applyNow(false);
+});
+
+/* ---------- 금액 : 숫자만 + 천단위 콤마 ---------- */
+function setAmount(num){
+  $('amount').value = num ? Number(num).toLocaleString('ko-KR') : '';
+}
+$('amount').addEventListener('input', e=>{
+  const digits = e.target.value.replace(/[^0-9]/g,'').replace(/^0+(?=\d)/,'');
+  e.target.value = digits ? Number(digits).toLocaleString('ko-KR') : '';
+});
+
+/* ---------- 드롭다운 직접 입력 ---------- */
+function bindCustom(selId, inpId){
+  $(selId).addEventListener('change', ()=>{
+    const on = $(selId).value === '__custom__';
+    $(inpId).classList.toggle('hidden', !on);
+    if(on) $(inpId).focus(); else $(inpId).value = '';
+  });
+}
+bindCustom('vendorType','vendorTypeCustom');
+bindCustom('purpose','purposeCustom');
+
+function resolve(selId, inpId, label){
+  const sel = $(selId).value;
+  if(!sel) return { ok:false, msg:label + '을(를) 선택하세요' };
+  if(sel === '__custom__'){
+    const v = $(inpId).value.trim();
+    if(!v) return { ok:false, msg:label + '을(를) 입력하세요' };
+    return { ok:true, value:v };
+  }
+  return { ok:true, value:sel };
+}
+
+/* =========================================================
+   영수증 사진 : 압축 → 업로드 → 자동 인식
+   ========================================================= */
+$('photoBtn').addEventListener('click', ()=>$('photoInput').click());
+$('photoDel').addEventListener('click', clearPhoto);
+
+function clearPhoto(){
+  state.receipt = null;
+  $('photoInput').value = '';
+  $('thumbBox').classList.add('hidden');
+  $('ocrState').classList.add('hidden');
+  $('photoBtn').classList.remove('hidden');
+}
+
+function ocrMsg(html, spin){
+  const el = $('ocrState');
+  el.classList.remove('hidden');
+  el.innerHTML = (spin ? '<span class="spinner"></span>' : '') + '<span>' + html + '</span>';
+}
+
+/** 사진을 긴 변 1600px, JPEG 품질 0.72 로 줄여 데이터 URL 로 만듭니다 */
+function compressImage(file){
+  return new Promise((resolve, reject)=>{
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = ()=>{
+      let w = img.naturalWidth, h = img.naturalHeight;
+      const scale = Math.min(1, 1600 / Math.max(w, h));
+      w = Math.round(w * scale); h = Math.round(h * scale);
+      const c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#fff'; ctx.fillRect(0,0,w,h);
+      ctx.drawImage(img, 0, 0, w, h);
+      URL.revokeObjectURL(url);
+      resolve(c.toDataURL('image/jpeg', 0.72));
+    };
+    img.onerror = ()=>{ URL.revokeObjectURL(url); reject(new Error('이미지를 읽을 수 없습니다')); };
+    img.src = url;
+  });
+}
+
+$('photoInput').addEventListener('change', async e=>{
+  const file = e.target.files && e.target.files[0];
+  if(!file) return;
+
+  let dataUrl;
+  try{
+    dataUrl = await compressImage(file);
+  }catch(err){
+    toast('사진을 읽지 못했습니다'); clearPhoto(); return;
+  }
+
+  $('thumbImg').src = dataUrl;
+  $('thumbBox').classList.remove('hidden');
+  $('photoBtn').classList.add('hidden');
+  state.receipt = { dataUrl:dataUrl, fileId:'', url:'' };
+
+  // 업로드와 자동 인식은 실패해도 입력·저장에는 영향을 주지 않습니다
+  ocrMsg('영수증을 읽는 중입니다…', true);
+  try{
+    const out = await call('ocr', { image: dataUrl, division: state.div, writer: state.writer });
+    state.receipt.fileId = out.fileId || '';
+    state.receipt.url    = out.url || '';
+
+    const g = out.guess || {};
+    const filled = [];
+    // 자동으로 넣어 둔 현재 시각은 영수증 값으로 바꾸고,
+    // 직접 고친 값은 그대로 둡니다.
+    if(g.amount && !$('amount').value){ setAmount(g.amount); filled.push('금액'); }
+    if(g.vendor && !$('vendor').value){ $('vendor').value = g.vendor; filled.push('상호'); }
+    if(g.date && !state.touchedDate){ setDate(g.date); state.touchedDate = true; filled.push('날짜'); }
+    if(g.time && !state.touchedTime){ $('timeStart').value = g.time; state.touchedTime = true; filled.push('시간'); }
+
+    if(filled.length){
+      ocrMsg('첨부 완료 · ' + filled.join(', ') + ' 자동 입력됨. 값을 확인해 주세요.', false);
+    }else if(out.ocr === 'off'){
+      ocrMsg('첨부 완료 · 자동 인식은 꺼져 있습니다.', false);
+    }else if(out.ocr === 'fail'){
+      ocrMsg('첨부 완료 · 자동 인식을 쓸 수 없습니다. Drive API 설정을 확인해 주세요.', false);
+    }else{
+      ocrMsg('첨부 완료 · 글자를 읽지 못했습니다. 직접 입력해 주세요.', false);
+    }
+  }catch(err){
+    console.error(err);
+    ocrMsg('사진 업로드에 실패했습니다. 사진 없이 저장됩니다.', false);
+    state.receipt.fileId = ''; state.receipt.url = '';
+  }
+});
+
+/* =========================================================
+   저장
+   ========================================================= */
+$('submitBtn').addEventListener('click', save);
+
+async function save(){
+  const date = $('date').value;
+  const time = $('timeStart').value;
+  const amt  = $('amount').value.replace(/,/g,'');
+  const vend = $('vendor').value.trim();
+  const att  = $('attendees').value.trim();
+
+  if(!state.writer)          return toast('작성자 이름이 없습니다');
+  if(!state.div)             return toast('구분을 선택하세요');
+  if(!date)                  { toast('날짜를 선택하세요'); $('date').focus(); return; }
+  if(!state.day)             return toast('요일을 선택하세요');
+  if(!time)                  { toast('시간을 입력하세요'); $('timeStart').focus(); return; }
+  if(!amt || Number(amt) <= 0){ toast('사용금액을 입력하세요'); $('amount').focus(); return; }
+  if(!vend)                  { toast('사용처를 입력하세요'); $('vendor').focus(); return; }
+  const vt = resolve('vendorType','vendorTypeCustom','사용처 구분');
+  if(!vt.ok) return toast(vt.msg);
+  const pp = resolve('purpose','purposeCustom','사용목적');
+  if(!pp.ok) return toast(pp.msg);
+  if(!att)                   { toast('참석자를 입력하세요'); $('attendees').focus(); return; }
+
+  const payload = {
+    division  : state.div,
+    dateLabel : fmtDate(date),          // 9/4
+    isoDate   : date,                   // 2026-09-04
+    weekday   : state.day,              // 금
+    timeStart : time,                   // 21:04
+    timeEnd   : $('timeEnd').value,     // 공백 칸
+    amount    : Number(amt),
+    vendor    : vend,
+    vendorType: vt.value,
+    purpose   : pp.value,
+    attendees : att,
+    note      : $('note').value.trim(),
+    writer    : state.writer,
+    receiptId : state.receipt ? state.receipt.fileId : '',
+    receiptUrl: state.receipt ? state.receipt.url : ''
+  };
+
+  const btn = $('submitBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>저장 중…';
+  try{
+    await call('save', payload);
+    showDone(payload);
+  }catch(err){
+    console.error(err);
+    toast('저장 실패 : ' + (err.message || '네트워크 오류'));
+  }finally{
+    btn.disabled = false;
+    btn.textContent = '저장하기';
+  }
+}
+
+function escapeHtml(s){
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function showDone(p){
+  $('summary').innerHTML = [
+    ['구분',   p.division],
+    ['일시',   p.dateLabel + ' (' + p.weekday + ') ' + p.timeStart + ' ~ ' + (p.timeEnd || '')],
+    ['금액',   p.amount.toLocaleString('ko-KR') + '원'],
+    ['사용처', p.vendor + ' / ' + p.vendorType],
+    ['목적',   p.purpose],
+    ['참석자', p.attendees],
+    ['비고',   p.note || '-'],
+    ['영수증', p.receiptUrl ? '첨부됨' : '없음']
+  ].map(r => '<div><span>' + r[0] + '</span><span>' + escapeHtml(r[1]) + '</span></div>').join('');
+  show('step3');
+}
+
+$('again').addEventListener('click', ()=>{
+  ['amount','vendor','attendees','note','vendorTypeCustom','purposeCustom','timeEnd'].forEach(id => $(id).value = '');
+  $('vendorType').value = ''; $('purpose').value = '';
+  $('vendorTypeCustom').classList.add('hidden');
+  $('purposeCustom').classList.add('hidden');
+  clearPhoto();
+  applyNow(true);           // 다음 건도 지금 시각에서 시작합니다
+  show('step2');
+});
+
+/* =========================================================
+   내 입력내역
+   ========================================================= */
+function thisMonth(){
+  const d = new Date();
+  return d.getFullYear() + '-' + pad(d.getMonth()+1);
+}
+function shiftMonth(ym, delta){
+  const p = ym.split('-').map(Number);
+  const d = new Date(p[0], p[1]-1 + delta, 1);
+  return d.getFullYear() + '-' + pad(d.getMonth()+1);
+}
+$('prevMonth').addEventListener('click', ()=>{ state.listMonth = shiftMonth(state.listMonth, -1); loadList(); });
+$('nextMonth').addEventListener('click', ()=>{ state.listMonth = shiftMonth(state.listMonth,  1); loadList(); });
+
+function openList(){
+  const name = state.writer || $('writer').value.trim();
+  if(!name){ toast('작성자 이름을 먼저 입력하세요'); show('step1'); return; }
+  state.writer = name;
+  $('listWriter').textContent = name;
+  state.listMonth = state.listMonth || thisMonth();
+  show('step4');
+  loadList();
+}
+
+async function loadList(){
+  const p = state.listMonth.split('-');
+  $('monthLabel').textContent = p[0] + '년 ' + Number(p[1]) + '월';
+  $('listBody').innerHTML = '<div class="empty"><span class="spinner"></span></div>';
+  try{
+    const out = await call('list', { writer: state.writer, month: state.listMonth });
+    renderList(out.rows || []);
+  }catch(err){
+    $('listBody').innerHTML = '<div class="empty">불러오지 못했습니다.<br>' + escapeHtml(err.message) + '</div>';
+  }
+}
+
+function renderList(rows){
+  if(!rows.length){
+    $('listBody').innerHTML = '<div class="empty">이 달에 입력한 내역이 없습니다.</div>';
+    return;
+  }
+  const sum = rows.reduce((a, r)=>a + Number(r.amount || 0), 0);
+  let html = '<div class="total"><span>' + rows.length + '건 합계</span>'
+           + '<span class="sum">' + sum.toLocaleString('ko-KR') + '원</span></div>';
+
+  html += rows.map(r=>{
+    const receipt = r.receiptUrl
+      ? '<a href="' + escapeHtml(r.receiptUrl) + '" target="_blank" rel="noopener">영수증 보기</a>'
+      : '';
+    return '<div class="rowitem">'
+      + '<div class="top"><span class="vend">' + escapeHtml(r.vendor) + '</span>'
+      + '<span class="amt">' + Number(r.amount||0).toLocaleString('ko-KR') + '원</span></div>'
+      + '<div class="meta">' + escapeHtml(r.division) + ' · ' + escapeHtml(r.dateLabel)
+      + ' (' + escapeHtml(r.weekday) + ') ' + escapeHtml(r.timeStart)
+      + ' · ' + escapeHtml(r.purpose) + ' · ' + escapeHtml(r.attendees) + '</div>'
+      + '<div class="acts">' + receipt
+      + '<button class="danger" data-del="' + escapeHtml(r.id) + '">삭제</button></div>'
+      + '</div>';
+  }).join('');
+
+  $('listBody').innerHTML = html;
+  $('listBody').querySelectorAll('[data-del]').forEach(b=>{
+    b.addEventListener('click', ()=>removeRow(b.dataset.del));
+  });
+}
+
+async function removeRow(id){
+  if(!confirm('이 내역을 삭제할까요? 되돌릴 수 없습니다.')) return;
+  try{
+    await call('delete', { id:id, writer: state.writer });
+    toast('삭제되었습니다');
+    loadList();
+  }catch(err){
+    toast('삭제 실패 : ' + err.message);
+  }
+}
+
+/* =========================================================
+   초기화
+   ========================================================= */
+(function init(){
+  applyNow(true);
+  state.listMonth = thisMonth();
+  try{
+    const saved = localStorage.getItem('stec_writer');
+    if(saved){ $('writer').value = saved; state.writer = saved; }
+  }catch(err){}
+})();
+</script>
+</body>
+</html>
