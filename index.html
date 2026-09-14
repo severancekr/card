@@ -263,6 +263,45 @@ table.all tr.me td{background:var(--accent-soft);font-weight:700}
 /* 회의비는 글씨만 빨간색으로 표시합니다 */
 .meeting-text{color:var(--accent);font-weight:700}
 select.meeting{color:var(--accent);font-weight:700;border-color:var(--accent)}
+
+/* 본인예산 버튼 */
+.topright{display:flex;justify-content:flex-end;margin-bottom:12px}
+.pink-btn{
+  background:#e08a9c;color:#fff;border:none;
+  font-family:inherit;font-size:14px;font-weight:700;letter-spacing:-.2px;
+  padding:10px 20px;border-radius:999px;cursor:pointer;
+  box-shadow:0 2px 6px rgba(224,138,156,.35);
+  transition:transform .1s ease,background .1s ease,box-shadow .1s ease;
+}
+.pink-btn:hover{background:#d87c90}
+.pink-btn:active{
+  transform:translateY(1px) scale(.96);
+  background:#c96b7f;
+  box-shadow:0 1px 2px rgba(224,138,156,.4) inset;
+}
+
+/* 수정 중 안내줄 */
+.editbar{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:11px 14px;margin-bottom:14px;border-radius:12px;
+  background:#fff6e5;border:1px solid #e6b455;
+  font-size:13px;font-weight:600;color:#8a5a00;
+}
+@media (prefers-color-scheme:dark){
+  .editbar{background:#2a2113;border-color:#8a6a2a;color:#e8c98a}
+}
+.editbar button{
+  background:none;border:none;font-family:inherit;font-size:13px;font-weight:700;
+  color:inherit;text-decoration:underline;cursor:pointer;padding:4px;white-space:nowrap;
+}
+
+/* 예산 화면의 사용 내역 */
+.itemrow{padding:12px 0;border-bottom:1px solid var(--line)}
+.itemrow:last-child{border-bottom:none}
+.itemrow .l1{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.itemrow .l1 b{font-size:15px;letter-spacing:-.2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.itemrow .l1 span{font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums;white-space:nowrap}
+.itemrow .l2{font-size:12.5px;color:var(--muted);margin-top:4px;line-height:1.55}
 .spinner{
   width:17px;height:17px;border:2px solid rgba(124,133,152,.3);border-top-color:var(--accent);
   border-radius:50%;display:inline-block;animation:spin .7s linear infinite;flex:0 0 auto;
@@ -285,6 +324,9 @@ footer.note{text-align:center;font-size:11px;color:var(--faint);padding:4px 0 0}
 <!-- ===== STEP 1 : 작성자 + 구분 ===== -->
 <section id="step1" class="wrap">
   <div class="card">
+    <div class="topright">
+      <button type="button" class="pink-btn" id="myBudgetBtn">본인예산</button>
+    </div>
     <div class="field">
       <label for="writer">작성자<span class="req">*</span></label>
       <select id="writer">
@@ -321,6 +363,11 @@ footer.note{text-align:center;font-size:11px;color:var(--faint);padding:4px 0 0}
     </div>
     <button class="link-btn" id="goList">내 내역</button>
     <button class="link-btn" id="changeDiv">변경</button>
+  </div>
+
+  <div class="editbar hidden" id="editBar">
+    <span>이미 저장된 내역을 고치는 중입니다</span>
+    <button type="button" id="editCancel">취소</button>
   </div>
 
   <!-- 영수증 -->
@@ -510,7 +557,7 @@ footer.note{text-align:center;font-size:11px;color:var(--faint);padding:4px 0 0}
       <input type="password" id="pwNew2" inputmode="numeric" placeholder="한 번 더 입력하세요" autocomplete="new-password">
     </div>
     <button class="submit" id="pwSave" style="margin-top:4px">비밀번호 등록</button>
-    <div class="hint">본인 예산만 조회할 수 있습니다. 잊어버리면 관리자에게 문의하세요.</div>
+    <div class="hint">본인 예산만 조회할 수 있습니다.</div>
   </div>
 
   <!-- 비밀번호 입력 -->
@@ -521,7 +568,10 @@ footer.note{text-align:center;font-size:11px;color:var(--faint);padding:4px 0 0}
       <input type="password" id="pwInput" inputmode="numeric" placeholder="비밀번호를 입력하세요" autocomplete="current-password">
     </div>
     <button class="submit" id="pwGo" style="margin-top:4px">예산 조회</button>
-    <div class="hint">본인 예산만 조회됩니다. 관리자 비밀번호를 넣으면 전체가 보입니다.</div>
+    <div style="text-align:center;margin-top:12px">
+      <button type="button" class="link-btn" id="pwForgot">비밀번호를 잊으셨나요?</button>
+    </div>
+    <div class="hint">볼 때마다 비밀번호를 넣어야 합니다. 본인 예산만 조회됩니다.</div>
   </div>
 
   <!-- 결과 -->
@@ -539,6 +589,10 @@ footer.note{text-align:center;font-size:11px;color:var(--faint);padding:4px 0 0}
       <table class="bt" id="bTable"></table>
       <div class="bar" id="bBar"><span style="width:0%"></span></div>
       <div class="barnote" id="bNote"></div>
+    </div>
+    <div class="card" id="itemBox">
+      <p class="card-title" id="itemTitle">사용 내역</p>
+      <div id="itemBody"></div>
     </div>
     <div class="card hidden" id="extraBox">
       <p class="card-title">관리자 전용 예산</p>
@@ -579,7 +633,8 @@ footer.note{text-align:center;font-size:11px;color:var(--faint);padding:4px 0 0}
    ========================================================= */
 const CONFIG = {
   GAS_URL: 'https://script.google.com/macros/s/AKfycbyPcMAWTAFrljP2DHg47OBACJtVw-GBUnmny3ZYuIlNtQp9r_QlCGjJ6J3G2dydxbhZVw/exec',
-  TOKEN  : 'stec-2026-card'
+  TOKEN  : 'stec-2026-card',
+  START_MONTH: '2026-09'      // 예산 조회 시작 월. Code.gs 의 START_MONTH 와 같게
 };
 /* ========================================================= */
 
@@ -590,7 +645,7 @@ const won = n => (Number(n)||0).toLocaleString('ko-KR');
 
 const state = {
   div:'', day:'', writer:'', receipt:null,
-  listMonth:'', budgetMonth:'', budgetPw:'',
+  listMonth:'', budgetMonth:'', budgetPw:'', budgetFrom:'step4', editId:'',
   touchedDate:false, touchedTime:false, hiddenAt:0
 };
 
@@ -682,8 +737,14 @@ $('changeDiv').addEventListener('click', ()=>show('step1'));
 $('backToForm').addEventListener('click', ()=>show('step2'));
 $('goList').addEventListener('click', ()=>openList());
 $('doneToList').addEventListener('click', ()=>openList());
-$('goBudget').addEventListener('click', ()=>openBudget());
-$('budgetBack').addEventListener('click', ()=>show('step4'));
+$('goBudget').addEventListener('click', ()=>openBudget('step4'));
+$('budgetBack').addEventListener('click', ()=>show(state.budgetFrom || 'step4'));
+$('myBudgetBtn').addEventListener('click', ()=>{
+  const name = $('writer').value;
+  if(!name){ toast('작성자를 먼저 선택하세요'); $('writer').focus(); return; }
+  state.writer = name;
+  openBudget('step1');
+});
 
 /* 예산 차감 안내 : 손경훈은 백만호 예산, 회의비는 개인 예산과 무관 */
 function updateChargeHint(){
@@ -922,18 +983,65 @@ async function save(){
     receiptId : state.receipt ? state.receipt.fileId : '',
     receiptUrl: state.receipt ? state.receipt.url : ''
   };
+  if(state.editId) payload.id = state.editId;
 
   const btn = $('submitBtn');
+  const label = state.editId ? '수정 저장' : '저장하기';
   btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>확인 중…';
+
+  // 저장 전에 한도를 넘기는지 미리 알려 드립니다 (수정 중에는 건너뜁니다)
+  if(!state.editId){
+    try{
+      const q = await call('quota', {
+        writer: state.writer, chargeTo: payload.chargeTo,
+        isoDate: date, amount: payload.amount
+      });
+      if(!q.skip && q.exceed){
+        const go = confirm(
+          q.owner + ' 예산 한도를 넘깁니다.\n\n'
+          + '현재 잔액 ' + won(q.left) + '원\n'
+          + '이번 사용 ' + won(q.amount) + '원\n'
+          + '저장 후 ' + won(q.after) + '원\n\n'
+          + '그래도 저장할까요?');
+        if(!go){ btn.disabled = false; btn.textContent = label; return; }
+      }
+    }catch(err){ /* 확인에 실패해도 저장은 진행합니다 */ }
+  }
+
   btn.innerHTML = '<span class="spinner"></span>저장 중…';
   try{
-    const out = await call('save', payload);
-    showDone(payload, out);
+    const out = await sendEntry(payload, false);
+    if(state.editId){
+      toast('수정되었습니다');
+      endEdit();
+      openList();
+    }else{
+      showDone(payload, out);
+    }
   }catch(err){
-    toast('저장 실패 : ' + err.message);
+    toast((state.editId ? '수정 실패 : ' : '저장 실패 : ') + err.message);
   }finally{
     btn.disabled = false;
-    btn.textContent = '저장하기';
+    btn.textContent = label;
+  }
+}
+
+/** 중복이면 한 번 물어보고, 그래도 진행하면 force 로 다시 보냅니다 */
+async function sendEntry(payload, force){
+  const action = state.editId ? 'update' : 'save';
+  try{
+    return await call(action, force ? Object.assign({ force:true }, payload) : payload);
+  }catch(err){
+    if(err.payload && err.payload.duplicate && !force){
+      const go = confirm(
+        '같은 내역이 이미 들어 있습니다.\n\n'
+        + payload.dateLabel + ' · ' + payload.vendor + ' · ' + won(payload.amount) + '원\n\n'
+        + '그래도 저장할까요?');
+      if(!go) throw new Error('저장을 취소했습니다');
+      return await sendEntry(payload, true);
+    }
+    throw err;
   }
 }
 
@@ -972,6 +1080,7 @@ $('again').addEventListener('click', ()=>{
   ['vendorTypeCustom','purposeCustom','detailCustom'].forEach(id => $(id).classList.add('hidden'));
   updateChargeHint();
   clearPhoto();
+  endEdit();
   applyNow(true);
   show('step2');
 });
@@ -1049,6 +1158,7 @@ function renderList(rows){
       + ' · ' + escapeHtml(r.purpose) + ' · ' + escapeHtml(r.attendees) + charge
       + (extra ? '<br>' + extra : '') + '</div>'
       + '<div class="acts">' + receipt
+      + '<button data-edit="' + escapeHtml(r.id) + '">수정</button>'
       + '<button class="danger" data-del="' + escapeHtml(r.id) + '">삭제</button></div>'
       + '</div>';
   }).join('');
@@ -1057,7 +1167,69 @@ function renderList(rows){
   $('listBody').querySelectorAll('[data-del]').forEach(b=>{
     b.addEventListener('click', ()=>removeRow(b.dataset.del));
   });
+  $('listBody').querySelectorAll('[data-edit]').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      const row = rows.filter(x => x.id === b.dataset.edit)[0];
+      if(row) startEdit(row);
+    });
+  });
 }
+
+/* ---------- 저장된 내역 고치기 ---------- */
+function setSelect(selId, customId, value){
+  if(!value){ $(selId).value = ''; $(customId).classList.add('hidden'); $(customId).value = ''; return; }
+  if(hasOption(selId, value)){
+    $(selId).value = value;
+    $(customId).classList.add('hidden'); $(customId).value = '';
+  }else{
+    $(selId).value = '__custom__';
+    $(customId).classList.remove('hidden'); $(customId).value = value;
+  }
+}
+
+function startEdit(r){
+  state.editId = r.id;
+  state.div = r.division;
+  $('divLabel').textContent = r.division;
+  $('writerLabel').textContent = '작성자 ' + state.writer;
+
+  if(r.isoDate) setDate(r.isoDate);
+  if(r.weekday) pickDay(r.weekday);
+  state.touchedDate = true;
+  state.touchedTime = true;
+  $('timeStart').value = r.timeStart || '';
+  $('timeEnd').value   = (r.timeEnd && r.timeEnd !== '~') ? r.timeEnd : '';
+
+  setAmount(r.amount);
+  $('vendor').value    = r.vendor || '';
+  $('attendees').value = r.attendees || '';
+  $('remark').value    = r.remark || '';
+  setSelect('vendorType','vendorTypeCustom', r.vendorType);
+  setSelect('purpose','purposeCustom', r.purpose);
+  setSelect('detail','detailCustom', r.detail);
+
+  $('chargeTo').value = (r.owner === '공용비' || r.owner === '회의비') ? r.owner : '';
+  updateChargeHint();
+
+  clearPhoto();
+  if(r.receiptUrl) ocrMsg('이미 붙어 있는 영수증이 있습니다. 새 사진을 올리면 바뀝니다.', false);
+
+  $('editBar').classList.remove('hidden');
+  $('submitBtn').textContent = '수정 저장';
+  show('step2');
+}
+
+function endEdit(){
+  state.editId = '';
+  $('editBar').classList.add('hidden');
+  $('submitBtn').textContent = '저장하기';
+}
+
+$('editCancel').addEventListener('click', ()=>{
+  endEdit();
+  clearPhoto();
+  openList();
+});
 
 async function removeRow(id){
   if(!confirm('이 내역을 삭제할까요? 되돌릴 수 없습니다.')) return;
@@ -1073,10 +1245,21 @@ async function removeRow(id){
 /* =========================================================
    예산 조회
    ========================================================= */
-$('bPrev').addEventListener('click', ()=>{ state.budgetMonth = shiftMonth(state.budgetMonth,-1); loadBudget(); });
+function clampMonth(ym){ return ym < CONFIG.START_MONTH ? CONFIG.START_MONTH : ym; }
+
+$('bPrev').addEventListener('click', ()=>{
+  const m = shiftMonth(state.budgetMonth, -1);
+  if(m < CONFIG.START_MONTH){
+    toast(monthText(CONFIG.START_MONTH) + '부터 조회할 수 있습니다');
+    return;
+  }
+  state.budgetMonth = m;
+  loadBudget();
+});
 $('bNext').addEventListener('click', ()=>{ state.budgetMonth = shiftMonth(state.budgetMonth, 1); loadBudget(); });
 $('bRefresh').addEventListener('click', ()=>loadBudget());
 $('pwSave').addEventListener('click', savePassword);
+$('pwForgot').addEventListener('click', forgotPassword);
 $('pwGo').addEventListener('click', ()=>{
   const pw = $('pwInput').value.trim();
   if(!pw) return toast('비밀번호를 입력하세요');
@@ -1085,12 +1268,13 @@ $('pwGo').addEventListener('click', ()=>{
 });
 $('pwInput').addEventListener('keydown', e=>{ if(e.key === 'Enter') $('pwGo').click(); });
 
-async function openBudget(){
+async function openBudget(from){
   const name = state.writer || $('writer').value;
   if(!name){ toast('작성자를 먼저 선택하세요'); show('step1'); return; }
   state.writer = name;
-  state.budgetMonth = state.budgetMonth || thisMonth();
-  state.budgetPw = '';
+  state.budgetFrom = from || 'step4';
+  state.budgetMonth = clampMonth(state.budgetMonth || thisMonth());
+  state.budgetPw = '';                       // 볼 때마다 비밀번호를 다시 받습니다
   $('budgetWho').textContent = name;
   $('pwInputLabel').textContent = name + ' 님의 비밀번호';
   $('pwSetup').classList.add('hidden');
@@ -1129,6 +1313,13 @@ async function savePassword(){
   }finally{
     btn.disabled = false; btn.textContent = '비밀번호 등록';
   }
+}
+
+function forgotPassword(){
+  alert('관리자에게 초기화를 요청해 주세요.\n\n'
+    + '관리자가 스프레드시트의 사용자 시트에서 ' + state.writer
+    + ' 님의 비밀번호 칸을 지우면 됩니다.\n'
+    + '그다음 이 화면을 다시 열면 비밀번호를 새로 등록할 수 있습니다.');
 }
 
 async function loadBudget(){
@@ -1190,6 +1381,8 @@ function renderBudget(out){
       : '총 한도의 ' + rate + '% 사용';
   }
 
+  renderItems(out.items || [], out.month);
+
   // 백만호 본인에게만 보이는 공용비 · 회의비
   const ex = $('extraBox');
   if(out.extra && out.extra.length){
@@ -1234,13 +1427,43 @@ function renderBudget(out){
   }
 }
 
+/** 그 달에 이 예산에서 빠져나간 지출을 전부 보여 줍니다 */
+function renderItems(items, month){
+  $('itemTitle').textContent = monthText(month) + ' 사용 내역 ' + items.length + '건';
+
+  if(!items.length){
+    $('itemBody').innerHTML = '<div style="text-align:center;color:var(--muted);font-size:14px;padding:18px 0">'
+      + '이 달에 사용한 내역이 없습니다.</div>';
+    return;
+  }
+
+  $('itemBody').innerHTML = items.map(r=>{
+    const receipt = r.receiptUrl
+      ? ' · <a href="' + escapeHtml(r.receiptUrl) + '" target="_blank" rel="noopener" style="color:var(--muted);font-weight:700">영수증</a>'
+      : '';
+    const detail = [r.detail, r.remark].filter(Boolean).map(escapeHtml).join(' · ');
+    return '<div class="itemrow">'
+      + '<div class="l1"><b>' + escapeHtml(r.vendor) + '</b>'
+      + '<span>' + won(r.amount) + '원</span></div>'
+      + '<div class="l2">'
+      + escapeHtml(r.dateLabel) + ' (' + escapeHtml(r.weekday) + ') ' + escapeHtml(r.timeStart)
+      + ' · ' + escapeHtml(r.division) + ' · ' + escapeHtml(r.vendorType)
+      + ' · ' + escapeHtml(r.purpose)
+      + '<br>참석자 ' + escapeHtml(r.attendees)
+      + ' · 작성 ' + escapeHtml(r.writer)
+      + (detail ? '<br>' + detail : '')
+      + receipt
+      + '</div></div>';
+  }).join('');
+}
+
 /* =========================================================
    초기화
    ========================================================= */
 (function init(){
   applyNow(true);
   state.listMonth   = thisMonth();
-  state.budgetMonth = thisMonth();
+  state.budgetMonth = clampMonth(thisMonth());
   try{
     const saved = localStorage.getItem('stec_writer');
     if(saved){ $('writer').value = saved; state.writer = $('writer').value; }
