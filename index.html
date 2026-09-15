@@ -923,14 +923,17 @@ $('photoInput').addEventListener('change', async e=>{
     if(g.date && !state.touchedDate){ setDate(g.date); state.touchedDate = true; filled.push('날짜'); }
     if(g.time && !state.touchedTime){ $('timeStart').value = g.time; state.touchedTime = true; filled.push('시간'); }
 
+    const by = out.engine === 'vision' ? 'Cloud Vision'
+             : out.engine === 'drive'  ? '드라이브 인식' : '';
     if(filled.length){
-      ocrMsg('첨부 완료 · ' + filled.join(', ') + ' 자동 입력됨. 값을 확인해 주세요.', false);
+      ocrMsg('첨부 완료 · ' + (by ? by + ' · ' : '') + filled.join(', ')
+             + ' 자동 입력됨. 값을 확인해 주세요.', false);
     }else if(out.ocr === 'off'){
       ocrMsg('첨부 완료 · 자동 인식은 꺼져 있습니다.', false);
     }else if(out.ocr === 'fail'){
-      ocrMsg('첨부 완료 · 자동 인식 실패 : ' + escapeHtml(out.ocrError || 'Drive API 설정을 확인하세요'), false);
+      ocrMsg('첨부 완료 · 자동 인식 실패 : ' + escapeHtml(out.ocrError || '설정을 확인하세요'), false);
     }else{
-      ocrMsg('첨부 완료 · 글자를 읽지 못했습니다. 직접 입력해 주세요.', false);
+      ocrMsg('첨부 완료 · ' + (by ? by + ' · ' : '') + '값을 찾지 못했습니다. 직접 입력해 주세요.', false);
     }
   }catch(err){
     ocrMsg('사진 업로드 실패 : ' + escapeHtml(err.message) + ' (사진 없이 저장됩니다)', false);
